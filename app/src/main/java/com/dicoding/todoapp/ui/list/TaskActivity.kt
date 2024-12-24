@@ -57,6 +57,9 @@ class TaskActivity : AppCompatActivity() {
         taskViewModel.tasks.observe(this, Observer(this::updateData))
 
         //TODO 15 : Fixing bug : snackBar not show when task completed
+        taskViewModel.snackbarText.observe(this){ notify->
+            showSnackBar(notify)
+        }
     }
 
     private fun updateData(task: PagingData<Task>) {
