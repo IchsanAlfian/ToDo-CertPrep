@@ -1,6 +1,9 @@
 package com.dicoding.todoapp.setting
 
 import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
@@ -9,7 +12,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
+import androidx.work.Data
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequest
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.dicoding.todoapp.R
+import com.dicoding.todoapp.notification.NotificationWorker
+import com.dicoding.todoapp.utils.NOTIFICATION_CHANNEL_ID
+import java.util.concurrent.TimeUnit
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -52,9 +63,21 @@ class SettingsActivity : AppCompatActivity() {
             prefNotification?.setOnPreferenceChangeListener { preference, newValue ->
                 val channelName = getString(R.string.notify_channel_name)
                 //TODO 13 : Schedule and cancel daily reminder using WorkManager with data channelName
+                val workManager = WorkManager.getInstance(requireContext())
+                val value = newValue as Boolean
+                if (value) {
+                    val data = Data.Builder()
+                        .putString(NOTIFICATION_CHANNEL_ID, channelName)
+                        .build()
+                    val periodicWorkRequest = PeriodicWorkRequest.Builder(NotificationWorker::class.java, 1, TimeUnit.DAYS)
+                        .setInputData(data)
+                        .build()
+                    workManager.enqueue(periodicWorkRequest)
+                } else {
+                    workManager.cancelUniqueWork(channelName)
+                }
                 true
             }
-
         }
     }
 }
